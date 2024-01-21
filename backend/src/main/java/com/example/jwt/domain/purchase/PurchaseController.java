@@ -11,6 +11,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -45,5 +46,23 @@ public class PurchaseController {
     public ResponseEntity<List<PurchaseSummaryDTO>> retrievePurchaseHistory() {
         List<PurchaseSummary> purchaseSummaries = purchaseService.retrievePurchaseHistory();
         return new ResponseEntity<>(purchaseSummaryMapper.toDTOs(purchaseSummaries), HttpStatus.OK);
+    }
+
+    @PostMapping("/multiple")
+    @PreAuthorize("hasAuthority('CAN_PLACE_ORDER')")
+    public ResponseEntity<List<PurchaseDTO>> createMultiplePurchases(@RequestBody List<OrderPosition> orderPositions) {
+
+        List<PurchaseDTO> purchaseDTOs = new ArrayList<>();
+
+        for (OrderPosition position : orderPositions) {
+
+            UUID productId = position.getProductId();
+            int quantity = position.getQuantity();
+
+            Purchase purchase = purchaseService.placeOrder(productId, quantity);
+            purchaseDTOs.add(purchaseMapper.toDTO(purchase));
+
+        }
+        return new ResponseEntity<>(purchaseDTOs, HttpStatus.CREATED);
     }
 }
